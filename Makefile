@@ -55,7 +55,7 @@ sha512sum: $(NAME)
 	$@ ./$^ > $^.$@
 
 $(NAME)-docker:
-	docker run --rm --net=host -v $(PWD):/go/src/github.com/JulienBalestra/kube-sync -w /go/src/github.com/JulienBalestra/kube-sync golang:1.10 make
+	docker run --rm --net=host -v $(PWD):/go/src/github.com/Datadog/kube-sync -w /go/src/github.com/Datadog/kube-sync golang:1.10 make
 
 ci-e2e:
 	./.ci/e2e.sh
