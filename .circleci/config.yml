@@ -4,11 +4,11 @@ templates:
   job_template: &job_template
     docker:
       - image: golang:1.10
-    working_directory: /go/src/github.com/JulienBalestra/kube-sync
+    working_directory: /go/src/github.com/Datadog/kube-sync
 
   machine_job_template: &machine_job_template
     machine: true
-    working_directory: /home/circleci/.go_workspace/src/github.com/JulienBalestra/kube-sync
+    working_directory: /home/circleci/.go_workspace/src/github.com/Datadog/kube-sync
     environment:
       DEBIAN_FRONTEND: "noninteractive"
       CFLAGS: ""
@@ -74,13 +74,13 @@ jobs:
           name: docker-image
           # Override the master tag by the current branch, in the store.
           # TODO: use the image built by quay for this branch
-          command: sudo docker build -t quay.io/julienbalestra/kube-sync:master .
+          command: sudo docker build -t quay.io/Datadog/kube-sync:master .
       - run:
           name: make
           command: make kube-sync-docker
       - run:
           name: download
-          command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.8.0/pupernetes -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
+          command: sudo curl -Lf https://github.com/Datadog/pupernetes/releases/download/v0.8.0/pupernetes -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
       - run:
           name: apt
           command: sudo apt-get update -qq && sudo apt-get install -yqq systemd

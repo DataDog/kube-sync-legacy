@@ -66,7 +66,7 @@ spec:
       serviceAccount: kube-sync
       containers:
       - name: kube-sync
-        image: quay.io/julienbalestra/kube-sync:master
+        image: quay.io/Datadog/kube-sync:master
         command:
         - /usr/local/bin/kube-sync
         - kube-system # namespace

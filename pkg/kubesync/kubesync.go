@@ -3,7 +3,7 @@ package kubesync
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JulienBalestra/kube-sync/pkg/utils/kubeclient"
+	"github.com/Datadog/kube-sync/pkg/utils/kubeclient"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"

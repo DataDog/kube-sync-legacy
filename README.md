@@ -1,4 +1,4 @@
-# kube-sync [![CircleCI](https://circleci.com/gh/JulienBalestra/kube-sync.svg?style=svg)](https://circleci.com/gh/JulienBalestra/kube-sync) [![Docker Repository on Quay](https://quay.io/repository/julienbalestra/kube-sync/status "Docker Repository on Quay")](https://quay.io/repository/julienbalestra/kube-sync)
+# kube-sync
 
 kube-sync synchronise (create/update) a configmap from a source namespace to all namespaces.
 
