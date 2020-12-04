@@ -143,7 +143,9 @@ func (s *KubeSync) configmapSync() error {
 		s.promErrorCounter.Inc()
 		return err
 	}
-	allNamespaces, err := s.kubeClient.GetKubernetesClient().CoreV1().Namespaces().List(metav1.ListOptions{})
+	allNamespaces, err := s.kubeClient.GetKubernetesClient().CoreV1().Namespaces().List(metav1.ListOptions{
+		FieldSelector: "status.phase=Active",
+	})
 	if err != nil {
 		glog.Errorf("Cannot list all namespaces: %v", err)
 		s.promErrorCounter.Inc()
