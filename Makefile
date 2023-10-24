@@ -1,5 +1,5 @@
 CC=go
-CFLAGS?=-i
+CFLAGS?=
 GOOS=linux
 CGO_ENABLED?=0
 
@@ -38,7 +38,7 @@ verify-license:
 PKG=.cmd .docs .pkg .scripts
 $(PKG): %:
 	@# remove the leading '.'
-	ineffassign $(subst .,,$@)
+	ineffassign ./...
 	golint -set_exit_status $(subst .,,$@)/...
 	misspell -error $(subst .,,$@)
 
@@ -47,15 +47,15 @@ verify-misc: goget $(PKG)
 verify: verify-misc verify-gofmt verify-docs verify-license
 
 goget:
-	@which ineffassign || go get github.com/gordonklaus/ineffassign
-	@which golint || go get golang.org/x/lint/golint
-	@which misspell || go get github.com/client9/misspell/cmd/misspell
+	@which ineffassign || go install github.com/gordonklaus/ineffassign
+	@which golint || go install golang.org/x/lint/golint
+	@which misspell || go install github.com/client9/misspell/cmd/misspell
 
 sha512sum: $(NAME)
 	$@ ./$^ > $^.$@
 
 $(NAME)-docker:
-	docker run --rm --net=host -v $(PWD):/go/src/github.com/Datadog/kube-sync -w /go/src/github.com/Datadog/kube-sync golang:1.10 make
+	docker run --rm --net=host -v $(PWD):/go/src/github.com/DataDog/kube-sync -w /go/src/github.com/Datadog/kube-sync golang:1.21 make
 
 ci-e2e:
 	./.ci/e2e.sh

@@ -25,7 +25,7 @@ CMD=$(dirname $0)/../../cmd
 SCRIPT=$(dirname $0)
 
 
-GOFMT="gofmt -s -w"
+GOFMT="go fmt -s -w"
 find ${CMD} -name '*.go' | xargs ${GOFMT}
 find ${PKG} -name '*.go' | xargs ${GOFMT}
 find ${SCRIPT} -name '*.go' | xargs ${GOFMT}

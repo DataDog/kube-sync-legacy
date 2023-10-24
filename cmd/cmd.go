@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/Datadog/kube-sync/pkg/kubesync"
+	"github.com/DataDog/kube-sync/pkg/kubesync"
 )
 
 const programName = "kube-sync"
