@@ -1,9 +1,10 @@
 package kubesync
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Datadog/kube-sync/pkg/utils/kubeclient"
+	"github.com/DataDog/kube-sync/pkg/utils/kubeclient"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -137,13 +138,14 @@ func NewKubeSync(kubeConfigPath string, conf *Config) (*KubeSync, error) {
 // configmapSync get the source configmap in the source namespace and apply it in all namespaces except the source namespace
 func (s *KubeSync) configmapSync() error {
 	glog.V(0).Infof("Starting to sync source cm/%s from ns %s ...", s.Conf.SourceConfigmapName, s.Conf.SourceConfigmapNamespace)
-	sourceCM, err := s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(s.Conf.SourceConfigmapNamespace).Get(s.Conf.SourceConfigmapName, metav1.GetOptions{})
+	ctx := context.Background()
+	sourceCM, err := s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(s.Conf.SourceConfigmapNamespace).Get(ctx, s.Conf.SourceConfigmapName, metav1.GetOptions{})
 	if err != nil {
 		glog.Errorf("Cannot get cm/%s in ns %s: %v", s.Conf.SourceConfigmapName, s.Conf.SourceConfigmapNamespace, err)
 		s.promErrorCounter.Inc()
 		return err
 	}
-	allNamespaces, err := s.kubeClient.GetKubernetesClient().CoreV1().Namespaces().List(metav1.ListOptions{
+	allNamespaces, err := s.kubeClient.GetKubernetesClient().CoreV1().Namespaces().List(ctx, metav1.ListOptions{
 		FieldSelector: "status.phase=Active",
 	})
 	if err != nil {
@@ -181,10 +183,10 @@ func (s *KubeSync) configmapSync() error {
 			continue
 		}
 		newCM.Namespace = ns.Name
-		_, err = s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(ns.Name).Update(newCM)
+		_, err = s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(ns.Name).Update(ctx, newCM, metav1.UpdateOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			glog.V(0).Infof("Creating cm/%s in the ns %s", newCM.Name, ns.Name)
-			_, err = s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(ns.Name).Create(newCM)
+			_, err = s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(ns.Name).Create(ctx, newCM, metav1.CreateOptions{})
 		}
 		if err != nil {
 			glog.Errorf("Unexpected error while creating/updating cm/%s to ns %s: %v", newCM.Name, ns.Name, err)
