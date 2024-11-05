@@ -15,6 +15,7 @@ re: clean $(NAME)
 
 gofmt:
 	./scripts/update/gofmt.sh
+fmt: gofmt
 
 docs:
 	$(CC) run ./scripts/update/docs.go

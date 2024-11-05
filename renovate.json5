@@ -1,0 +1,8 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [ "config:best-practices", "default:automergeDigest" ],
+  gitAuthor: "Renovate Bot <bot@renovateapp.com>",
+  postUpdateOptions: [
+    "gomodTidy", // Run go mod tidy after Go module updates.
+  ],
+}

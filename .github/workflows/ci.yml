@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - bob/client-go-update
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23
+      - name: Run make
+        run: make
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: make
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23
+      - name: Run tests
+        run: make check
+
+  gofmt:
+    runs-on: ubuntu-latest
+    needs: make
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23
+      - name: Verify gofmt
+        run: make verify-gofmt
+
+  docs:
+    runs-on: ubuntu-latest
+    needs: make
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23
+      - name: Verify docs
+        run: make verify-docs
+
+  license:
+    runs-on: ubuntu-latest
+    needs: make
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23
+      - name: Verify license
+        run: make verify-license
+
+  misc:
+    runs-on: ubuntu-latest
+    needs: make
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23
+      - name: Run goget
+        run: make goget
+      - name: Verify misc
+        run: make -j verify-misc
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: make
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Docker image
+        run: docker build -t quay.io/Datadog/kube-sync:master .
+      - name: Run make kube-sync-docker
+        run: make kube-sync-docker
+      - name: Download pupernetes
+        run: sudo curl -Lf https://github.com/Datadog/pupernetes/releases/download/v0.8.0/pupernetes -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
+      - name: Install systemd
+        run: sudo apt-get update -qq && sudo apt-get install -yqq systemd
+      - name: Run pupernetes
+        run: sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd --kubectl-link /usr/local/bin/kubectl --kubeconfig-path $HOME/.kube/config --dns-check
+      - name: Run e2e tests
+        run: make ci-e2e
