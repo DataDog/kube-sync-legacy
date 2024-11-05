@@ -98,7 +98,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Docker image
-        run: docker build -t quay.io/Datadog/kube-sync:master .
+        run: docker build -t quay.io/datadog/kube-sync:master .
       - name: Run make kube-sync-docker
         run: make kube-sync-docker
       - name: Download pupernetes
