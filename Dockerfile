@@ -1,9 +1,8 @@
-FROM golang:1.10 as builder
+FROM ubuntu:noble@sha256:99c35190e22d294cdace2783ac55effc69d32896daaa265f0bbedbcde4fbe3e5
 
-COPY . /go/src/github.com/Datadog/kube-sync
+ENV PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-RUN make -C /go/src/github.com/Datadog/kube-sync re
+COPY kube-sync /usr/local/bin/kube-sync
 
-FROM busybox:latest
-
-COPY --from=builder /go/src/github.com/Datadog/kube-sync/kube-sync /usr/local/bin/kube-sync
+USER nobody
+CMD /usr/local/bin/kube-sync

@@ -1,21 +1,15 @@
 package main
 
 import (
-	"flag"
 	"os"
 
+	"github.com/DataDog/kube-sync/pkg/command"
 	"github.com/golang/glog"
-
-	"github.com/DataDog/kube-sync/cmd"
 )
 
-func init() {
-	flag.CommandLine.Parse([]string{})
-}
-
 func main() {
-	command, exitCode := cmd.NewCommand()
-	err := command.Execute()
+	cmd, exitCode := command.NewCommand()
+	err := cmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}

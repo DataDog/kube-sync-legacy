@@ -1,4 +1,4 @@
-package cmd
+package command
 
 import (
 	"flag"
@@ -6,11 +6,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/DataDog/kube-sync/pkg/kubesync"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/DataDog/kube-sync/pkg/kubesync"
 )
 
 const programName = "kube-sync"

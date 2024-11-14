@@ -2,7 +2,7 @@
 
 set -exuo pipefail
 
-cd $(dirname $0)/..
+cd "$(dirname $0)/.."
 
 kubectl apply -f ./examples/deployment.yaml
 

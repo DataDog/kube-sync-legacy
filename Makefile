@@ -1,64 +1,58 @@
-CC=go
-CFLAGS?=-i
-GOOS=linux
+GOFLAGS?=
+export GOOS?=linux
 CGO_ENABLED?=0
+export GO111MODULE?=on
+export GOPRIVATE?=github.com/DataDog*
+TARGET=kube-sync
+PACKAGE=github.com/DataDog/kube-sync
 
-NAME=kube-sync
+.PHONY: all
+all: $(TARGET) $(TARGET).sha256sum
 
-$(NAME):
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) $(CC) build $(CFLAGS) -o $@
+$(TARGET):
+	CGO_ENABLED=$(CGO_ENABLED) go build $(GOFLAGS) $(LDFLAGS) -o $(TARGET) ./cmd/$(TARGET)
 
+$(TARGET).sha256sum: $(TARGET)
+	sha256sum $(TARGET) > $(TARGET).sha256sum
+
+.PHONY: $(TARGET)-docker
+$(TARGET)-docker: $(TARGET)
+	docker build -t $(TARGET):local .
+
+.PHONY: clean
 clean:
-	$(RM) $(NAME) $(NAME).sha512sum
+	$(RM) $(TARGET) $(TARGET).sha256sum
+
+.PHONY: clean-docker
+clean-docker:
+	docker rmi $(TARGET)
+
+.PHONY: clean-all
+clean-all: clean clean-docker
 
 re: clean $(NAME)
 
-gofmt:
-	./scripts/update/gofmt.sh
-
 docs:
-	$(CC) run ./scripts/update/docs.go
+	go run ./scripts/update/docs.go
 
 license:
 	./scripts/update/license.sh
 
 check:
-	$(CC) test -v ./pkg/...
+	go test -v ./pkg/...
 
-verify-gofmt:
-	./scripts/verify/gofmt.sh
+fmt: ; go fmt ./...
+.PHONY: fmt
+
+pristine:
+	git ls-files --exclude-standard --modified --deleted --others | diff /dev/null -
+.PHONY: pristine
+
+verify-fmt: fmt pristine
+.PHONY: verify-fmt
 
 verify-docs:
 	./scripts/verify/docs.sh
 
 verify-license:
 	./scripts/verify/license.sh
-
-# Private targets
-PKG=.cmd .docs .pkg .scripts
-$(PKG): %:
-	@# remove the leading '.'
-	ineffassign $(subst .,,$@)
-	golint -set_exit_status $(subst .,,$@)/...
-	misspell -error $(subst .,,$@)
-
-verify-misc: goget $(PKG)
-
-verify: verify-misc verify-gofmt verify-docs verify-license
-
-goget:
-	@which ineffassign || go get github.com/gordonklaus/ineffassign
-	@which golint || go get golang.org/x/lint/golint
-	@which misspell || go get github.com/client9/misspell/cmd/misspell
-
-sha512sum: $(NAME)
-	$@ ./$^ > $^.$@
-
-$(NAME)-docker:
-	docker run --rm --net=host -v $(PWD):/go/src/github.com/Datadog/kube-sync -w /go/src/github.com/Datadog/kube-sync golang:1.10 make
-
-ci-e2e:
-	./.ci/e2e.sh
-
-# Everything but the $(NAME) target
-.PHONY: clean re gofmt docs license check verify-gofmt verify-docs verify-license verify-misc verify sha512sum goget
