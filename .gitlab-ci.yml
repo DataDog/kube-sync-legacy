@@ -1,0 +1,26 @@
+include: https://gitlab-templates.ddbuild.io/compute-delivery/v2/compute-delivery.yml
+
+build-docker-image:
+  extends: .build-docker-image
+
+goreleaser-snapshot:
+  extends: .compute-ci.goreleaser-snapshot
+  after_script:
+  - ./.ci/setup-kind.sh
+  - ./.ci/setup-e2e.sh
+  - ./.ci/run-e2e.sh
+  artifacts:
+    paths:
+    - img_tar_gz/
+    - img_tag
+    - .ci/kind.env
+
+goreleaser:
+  extends: .compute-ci.goreleaser
+
+# Make sure to delete the kind cluster.
+# Not sure this is really needed?
+kube-sync.on-failure:
+  extends: on-failure
+  after_script:
+  -  source .ci/kind.env && kind delete cluster --name $KIND_CLUSTER_NAME
