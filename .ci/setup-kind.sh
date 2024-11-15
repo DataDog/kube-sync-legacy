@@ -8,6 +8,15 @@ if ! docker network inspect kind; then
   docker network create kind
 fi
 
+# hack: identify container by its hostname, which luckily prefixes its name
+# this is a weak contract that likely won't hold with k8s runners
+# an alternative hack is to identify by container label (also a weak contract):
+# container_id=$(docker ps --filter label=ci.job_id="$CI_JOB_ID" -q)
+container_id=$(docker ps | grep "$HOSTNAME" | awk '{print $1}')
+if [[ -n $container_id ]] ; then
+  docker network connect kind "$container_id"
+fi
+
 # If the cluster already exists, replace it
 if kind get clusters | grep -q "^$KIND_CLUSTER_NAME$" ; then
   kind delete cluster --name "$KIND_CLUSTER_NAME"
