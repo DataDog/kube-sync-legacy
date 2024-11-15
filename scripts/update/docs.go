@@ -13,8 +13,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra/doc"
 
-	"github.com/Datadog/kube-sync/cmd"
-	"github.com/Datadog/kube-sync/pkg/kubesync"
+	"github.com/DataDog/kube-sync/cmd"
+	"github.com/DataDog/kube-sync/pkg/kubesync"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

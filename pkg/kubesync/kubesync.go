@@ -1,15 +1,9 @@
 package kubesync
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Datadog/kube-sync/pkg/utils/kubeclient"
-	"github.com/golang/glog"
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -17,6 +11,14 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/DataDog/kube-sync/pkg/utils/kubeclient"
+	"github.com/golang/glog"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -135,15 +137,15 @@ func NewKubeSync(kubeConfigPath string, conf *Config) (*KubeSync, error) {
 }
 
 // configmapSync get the source configmap in the source namespace and apply it in all namespaces except the source namespace
-func (s *KubeSync) configmapSync() error {
+func (s *KubeSync) configmapSync(ctx context.Context) error {
 	glog.V(0).Infof("Starting to sync source cm/%s from ns %s ...", s.Conf.SourceConfigmapName, s.Conf.SourceConfigmapNamespace)
-	sourceCM, err := s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(s.Conf.SourceConfigmapNamespace).Get(s.Conf.SourceConfigmapName, metav1.GetOptions{})
+	sourceCM, err := s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(s.Conf.SourceConfigmapNamespace).Get(ctx, s.Conf.SourceConfigmapName, metav1.GetOptions{})
 	if err != nil {
 		glog.Errorf("Cannot get cm/%s in ns %s: %v", s.Conf.SourceConfigmapName, s.Conf.SourceConfigmapNamespace, err)
 		s.promErrorCounter.Inc()
 		return err
 	}
-	allNamespaces, err := s.kubeClient.GetKubernetesClient().CoreV1().Namespaces().List(metav1.ListOptions{
+	allNamespaces, err := s.kubeClient.GetKubernetesClient().CoreV1().Namespaces().List(ctx, metav1.ListOptions{
 		FieldSelector: "status.phase=Active",
 	})
 	if err != nil {
@@ -181,10 +183,10 @@ func (s *KubeSync) configmapSync() error {
 			continue
 		}
 		newCM.Namespace = ns.Name
-		_, err = s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(ns.Name).Update(newCM)
+		_, err = s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(ns.Name).Update(ctx, newCM, metav1.UpdateOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			glog.V(0).Infof("Creating cm/%s in the ns %s", newCM.Name, ns.Name)
-			_, err = s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(ns.Name).Create(newCM)
+			_, err = s.kubeClient.GetKubernetesClient().CoreV1().ConfigMaps(ns.Name).Create(ctx, newCM, metav1.CreateOptions{})
 		}
 		if err != nil {
 			glog.Errorf("Unexpected error while creating/updating cm/%s to ns %s: %v", newCM.Name, ns.Name, err)
@@ -202,9 +204,9 @@ func (s *KubeSync) configmapSync() error {
 }
 
 // processSync is a wrapper over the actual configmap sync logic to easily process metrics
-func (s *KubeSync) processSync() error {
+func (s *KubeSync) processSync(ctx context.Context) error {
 	start := time.Now()
-	err := s.configmapSync()
+	err := s.configmapSync(ctx)
 	latency := time.Now().Sub(start)
 	if err == nil {
 		s.promSyncLatency.Observe(latency.Seconds())
@@ -251,16 +253,17 @@ func (s *KubeSync) registerListeners() {
 
 // Sync start the loop
 func (s *KubeSync) Sync() error {
-	sigCh := make(chan os.Signal)
-	defer close(sigCh)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 
 	s.registerListeners()
 
 	// Sync once and fail fast to crash the Pod in case of error
-	err := s.processSync()
+	err := s.processSync(ctx)
 	if err != nil {
 		return err
 	}
@@ -271,10 +274,10 @@ func (s *KubeSync) Sync() error {
 	for {
 		select {
 		case <-ticker.C:
-			_ = s.processSync()
+			_ = s.processSync(ctx)
 
-		case sig := <-sigCh:
-			glog.V(0).Infof("Signal %s received, stopping", sig.String())
+		case <-ctx.Done():
+			glog.V(0).Infof("done received, stopping")
 			return nil
 		}
 	}
