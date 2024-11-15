@@ -17,7 +17,7 @@ kind create cluster --name "$KIND_CLUSTER_NAME" --wait 5m
 # Avoid overriding our kubeconfig when running locally
 #KINDCONFIG=$(mktemp)
 if [ "$CI" = "true" ] ; then
-  kind get kubeconfig --name "$KIND_CLUSTER_NAME" > "$KUBECONFIG"
+  kind get kubeconfig --name "$KIND_CLUSTER_NAME" --internal > "$KUBECONFIG"
 else 
   KINDCONFIG=$(mktemp)
   kind get kubeconfig --name "$KIND_CLUSTER_NAME" > "$KINDCONFIG" 

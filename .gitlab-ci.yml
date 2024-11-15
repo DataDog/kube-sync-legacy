@@ -5,14 +5,20 @@ build-docker-image:
 
 goreleaser-snapshot:
   extends: .compute-ci.goreleaser-snapshot
-  after_script:
+
+e2e-test:
+  extends: .compute-ci.goreleaser-snapshot
+  stage: verify
+  before_script:
+  - |
+    curl -L -o /tmp/kubeclient.tgz https://github.com/DataDog/kubernetes/releases/download/v1.31.2-dd.1/kubernetes-client-linux-arm64.tar.gz 
+    tar  xzf /tmp/kubeclient.tgz -C /usr/local/bin/ kubernetes/client/bin/kubectl --strip-components=3
+  script:
   - ./.ci/setup-kind.sh
   - ./.ci/setup-e2e.sh
   - ./.ci/run-e2e.sh
   artifacts:
     paths:
-    - img_tar_gz/
-    - img_tag
     - .ci/kind.env
 
 goreleaser:
@@ -22,5 +28,6 @@ goreleaser:
 # Not sure this is really needed?
 kube-sync.on-failure:
   extends: on-failure
-  after_script:
+  when: always
+  script:
   -  source .ci/kind.env && kind delete cluster --name $KIND_CLUSTER_NAME
