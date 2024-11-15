@@ -23,6 +23,13 @@ e2e-test:
 
 goreleaser:
   extends: .compute-ci.goreleaser
+  before_script:
+  - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/datadog/$1".insteadOf https://github.com/DataDog/$1
+  - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/datadog/$1".insteadOf git@github.com:DataDog/$1
+  - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/datadog/$1".insteadOf ssh://git@github.com:DataDog/$1
+  # same as above but github.com/ instead of github.com:
+  - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/datadog/$1".insteadOf ssh://git@github.com/DataDog/$1
+  - export GITLAB_TOKEN=CI_JOB_TOKEN
 
 # Make sure to delete the kind cluster.
 # Not sure this is really needed?
